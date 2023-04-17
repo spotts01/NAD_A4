@@ -11,10 +11,13 @@ posts
 
 {% block content %}
 
-<div id = "spinner-box" role = "status" class = "text-center">
-    <div class="spinner-border" role="status"></div>
-</div>
+    <div id = "spinner-box" role = "status" class = "text-center">
+        <div class="spinner-border" role="status"></div>
+    </div>
 
-<div id = "posts-box"></div>
-<div id = "hello-world"></div>
+    <div id = "posts-box"></div>
+    <div class = "text-center mb-3" id = "end-box">
+        <button class = "btn btn-primary" id = "load-btn">Load more</button>
+    </div>
+    <div id = "box"> </div>
 {% endblock content %}
