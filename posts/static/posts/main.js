@@ -1,3 +1,5 @@
+import Dropzone from "../../../static/dropzone"
+
 console.log('hello world')
 
 
@@ -18,6 +20,9 @@ const body = document.getElementById('id_body')
 const csrf = document.getElementsByName('csrfmiddlewaretoken')
 
 const alertBox = document.getElementById('alert-box')
+const addBtn = document.getElementById('add-btn')
+const closeBtns = [...document.getElementsByClassName('add-modal-close')]
+const mydropzone = document.getElementById('my-drop-zone')
 
 console.log(window.location)
 const url = window.location.href
@@ -148,7 +153,7 @@ loadBtn.addEventListener('click', ()=>{
 
 
 })
-
+let newPostId = null
 postForm.addEventListener('submit', e=>{
    
     e.preventDefault()
@@ -164,6 +169,7 @@ postForm.addEventListener('submit', e=>{
 
         success: function(response){
             console.log(response)
+            newPostId = response.id
             postsBox.insertAdjacentHTML('afterbegin', `
                     <div class="card mb-2">                      
                     <div class="card-body">
@@ -187,9 +193,9 @@ postForm.addEventListener('submit', e=>{
                 </div>
             `)
             likeUnlikePosts()
-            $('#addPostModal').modal('hide')
+            // $('#addPostModal').modal('hide')
             handleAlerts('success', 'New post added!')
-            postForm.reset()
+            // postForm.reset()
 
         },
         error: function(error){
@@ -199,6 +205,35 @@ postForm.addEventListener('submit', e=>{
         }
 
     })
+})
+
+
+addBtn.addEventListener('click', ()=>{
+    mydropzone.classList.remove('not-visible')
+
+})
+
+closeBtns.forEach(btn => btn.addEventListener('click', ()=>{
+
+    postForm.reset()
+    if(!mydropzone.classList.contains('not-visible')){
+        mydropzone.classList.add('not-visible')
+    }
+}))
+
+
+
+const yDropzone = new Dropzone('#my-dropzone',{
+    url: 'upload/',
+    init:  function(){
+        this.on('sending', function(file, xhr, formData){
+            formData.append('csrfmiddlewaretoken', csrftoken)
+            formData.append('new_post_id', newPostId)
+        })
+    },
+    maxFiles: 5,
+    maxFilesize: 4,
+    acceptedFiles: '.png, .jpg, .jpeg'
 })
 
 getData()
