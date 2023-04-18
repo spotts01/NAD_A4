@@ -4,7 +4,7 @@ from .views import (
     load_post_data_view,
     hello_world_view,
     like_unlike_post,
-
+    post_detail_data_view,
     post_detail
 
     
@@ -21,6 +21,7 @@ urlpatterns = [
 
     path('<pk>/', post_detail, name= 'post-detail'),
 
-    
+    path('<pk>/data/', post_detail_data_view, name = 'post-detail-data'),
     path('hello-world/', hello_world_view, name='hello-world'),
+    
 ]

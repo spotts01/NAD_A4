@@ -28,6 +28,19 @@ def post_list_and_create(request):
     }
     return render(request, 'posts/main.html', context)
 
+def post_detail_data_view(request, pk):
+        obj = Post.objects.get(pk=pk)
+        data = {
+            'id': obj.id,
+            'title': obj.title,
+            'body': obj.body,
+            'author': obj.author.user.username,
+            'logged_in': request.user.username,
+        
+        }
+        return JsonResponse({'data':data})
+
+
 
 def post_detail(request, pk):
     obj = Post.objects.get(pk = pk)
