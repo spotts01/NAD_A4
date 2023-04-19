@@ -1,45 +1,244 @@
+import Dropzone from "../../../static/dropzone"
+
 console.log('hello world')
 
 
-const helloWorldBox = document.getElementById('hello-world')
+
 const postsBox = document.getElementById('posts-box')
-helloWorldBox.innerHTML = 'hello <b>world</b>'
+
 const spinnerBox = document.getElementById('spinner-box')
 
-$.ajax({
-    type: 'GET',
-    url: 'hello-world/',
-    success: function(reponse)
-    {
-        console.log('success', reponse)
-        helloWorldBox.textContent = reponse.text
-    },
+const loadBtn = document.getElementById('load-btn')
 
-    error: function(error)
-    {
-        console.log('error', error)
+const endBox = document.getElementById('end-box')
+
+const postForm = document.getElementById('post-form')
+
+const title = document.getElementById('id_title')
+const body = document.getElementById('id_body')
+
+const csrf = document.getElementsByName('csrfmiddlewaretoken')
+
+const alertBox = document.getElementById('alert-box')
+const addBtn = document.getElementById('add-btn')
+const closeBtns = [...document.getElementsByClassName('add-modal-close')]
+const mydropzone = document.getElementById('my-drop-zone')
+
+console.log(window.location)
+const url = window.location.href
+
+console.log('csrf', csrf[0].value)
+
+const getCookie = (name) => {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
     }
+    return cookieValue;
+}
+const csrftoken = getCookie('csrftoken')
+
+
+const deleted = localStorage.getItem('title')
+if(deleted){
+    handleAlerts('danger', `deleted "${deleted}"`)
+    localStorage.clear()
+}
+
+const likeUnlikePosts = () => {
+
+    const likeUnlikeForms = [...document.getElementsByClassName('like-unlike-forms')]
+    likeUnlikeForms.forEach( form => form.addEventListener('submit', e=> {
+
+        e.preventDefault()
+        const clickedId = e.target.getAttribute('data-form-id')
+        const clickedBtn = document.getElementById(`like-unlike-${clickedId}`)
+
+        $.ajax({
+            type: 'POST',
+            url: "/like-unlike/",
+            data: {
+                'csrfmiddlewaretoken': csrftoken,
+                'pk': clickedId,
+
+            },
+            success: function(response){
+                console.log(response)
+                clickedBtn.textContent = response.liked ? `Unliked (${response.count})` : `Like (${response.count})`
+
+            },
+            error: function(error){
+                console.log(error)
+            }
+        })
+    }))
+}
+
+let visible = 3
+
+
+
+
+const getData = () =>{
+    $.ajax({
+        type: 'GET',
+
+        url: `/data/${visible}/`,
+    
+        success: function (response){
+            console.log(response)
+            const data = response.data
+            setTimeout(()=>{
+                spinnerBox.classList.add('not-visible')
+                console.log(data)
+                data.forEach(el => {
+                    postsBox.innerHTML += `
+                        <div class="card mb-2">                      
+                            <div class="card-body">
+                                <h5 class="card-title">${el.title}</h5>
+                                <p class="card-text">${el.body}</p>
+                                <div class ="card-footer">
+                                    <div class="row"> 
+                                        <div class = "col-2">
+                                        <a href="${url}${el.id}" class="btn btn-primary">Details</a>
+                                        </div>
+                                        <div class = "col-2">
+                                        <form class = "like-unlike-forms" data-form-id = "${el.id}">
+                                            
+                                            <button  class="btn btn-primary" id = "like-unlike-${el.id}">${el.liked ? `Unliked (${el.count})` : `Like (${el.count})`}</button>
+                                        </form>
+                                        </div>
+                                    </div>
+                                   
+                                </div>
+                            </div>
+                        </div>
+                    `
+                });
+                
+                likeUnlikePosts()
+            }, 100)
+
+         
+            console.log(endBox.textContent); // check if text content is updated
+            if(response.size === 0 ){
+                endBox.textContent = 'No posts added yet'
+            }
+           
+            else if(response.size <= visible){
+                loadBtn.classList.add('not-visible')
+                endBox.textContent = 'No more posts to load...'
+            }
+        },
+        error: function(error){
+            console.log(error)
+        }
+    })
+
+}
+
+loadBtn.addEventListener('click', ()=>{
+
+    spinnerBox.classList.remove('not-visible')
+    visible +=3
+    getData()
+
+
+})
+let newPostId = null
+postForm.addEventListener('submit', e=>{
+   
+    e.preventDefault()
+
+    $.ajax({
+        type: 'POST',
+        url: '',
+        data: {
+            'csrfmiddlewaretoken': csrf[0].value,
+            'title': title.value,
+            'body': body.value
+        },
+
+        success: function(response){
+            console.log(response)
+            newPostId = response.id
+            postsBox.insertAdjacentHTML('afterbegin', `
+                    <div class="card mb-2">                      
+                    <div class="card-body">
+                        <h5 class="card-title">${response.title}</h5>
+                        <p class="card-text">${response.body}</p>
+                        <div class ="card-footer">
+                            <div class="row"> 
+                                <div class = "col-2">
+                                <a href="${url}${response.id}" class="btn btn-primary">Details</a>
+                                </div>
+                                <div class = "col-2">
+                                <form class = "like-unlike-forms" data-form-id = "${response.id}">
+                                    
+                                    <button class="btn btn-primary" id = "like-unlike-${response.id}">Like (0)</button>
+                                </form>
+                                </div>
+                            </div>
+                        
+                        </div>
+                    </div>
+                </div>
+            `)
+            likeUnlikePosts()
+            // $('#addPostModal').modal('hide')
+            handleAlerts('success', 'New post added!')
+            // postForm.reset()
+
+        },
+        error: function(error){
+            console.log(error)
+            console.log('this is the problem')
+            handleAlerts('danger', 'Error posting')
+        }
+
+    })
 })
 
 
-$.ajax({
-    type: 'GET',
-    url: '/data/',
+addBtn.addEventListener('click', ()=>{
+    mydropzone.classList.remove('not-visible')
 
-    success: function (response){
-        console.log(response)
-        const data = response.data
-        setTimeout(()=>{
-            spinnerBox.classList.add('not-visible')
-            console.log(data)
-            data.forEach(el => {
-                postsBox.innerHTML += `
-                    ${el.title} - <b>${el.body}</b> <br>
-                `
-            });
-        }, 1000)
-    },
-    error: function(error){
-        console.log(error)
-    }
 })
+
+closeBtns.forEach(btn => btn.addEventListener('click', ()=>{
+
+    postForm.reset()
+    if(!mydropzone.classList.contains('not-visible')){
+        mydropzone.classList.add('not-visible')
+    }
+    const yDropzone = Dropzone.forElement("#my-drop-zone")
+    yDropzone.removeAllFiles(true)
+}))
+
+
+Dropzone.autoDiscover = false
+
+
+const yDropzone = new Dropzone('#my-dropzone',{
+    url: 'upload/',
+    init:  function(){
+        this.on('sending', function(file, xhr, formData){
+            formData.append('csrfmiddlewaretoken', csrftoken)
+            formData.append('new_post_id', newPostId)
+        })
+    },
+    maxFiles: 5,    
+    maxFilesize: 4,
+    acceptedFiles: '.png, .jpg, .jpeg'
+})
+
+getData()
+
