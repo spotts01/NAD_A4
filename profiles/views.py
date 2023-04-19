@@ -3,7 +3,9 @@ from .models import Profile
 from .forms import ProfileFrom
 from django.http import JsonResponse
 # Create your views here.
+from django.contrib.auth.decorators import login_required
 
+@login_required
 def my_profile_view(request):
     obj = Profile.objects.get(user=request.user)
     form = ProfileFrom(request.POST or None, request.FILES or None, instance = obj)
